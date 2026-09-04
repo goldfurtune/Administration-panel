@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Gold Fortune Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0f0c07; color: #f5e6c8; font-family: 'DM Sans', sans-serif; min-height: 100vh; margin: 0; }
+    .gold { color: #d4a536; }
+    .gold-bg { background: linear-gradient(135deg, #d4a536, #e8c25a); color: #1a1408; }
+    .card { background: #1a160f; border: 1px solid #2e2618; border-radius: 14px; }
+    .btn { background: linear-gradient(135deg, #d4a536, #e8c25a); color: #1a1408; font-weight: 600; border-radius: 10px; padding: 12px 20px; border: none; cursor: pointer; font-size: 14px; }
+    .btn:hover { opacity: 0.92; }
+    .btn-danger { background: #b91c1c; color: #fff; font-weight: 600; border-radius: 8px; padding: 8px 14px; border: none; cursor: pointer; font-size: 13px; }
+    .btn-danger:hover { background: #991b1b; }
+    .input { background: #0f0c07; border: 1px solid #2e2618; color: #f5e6c8; border-radius: 10px; padding: 12px 14px; width: 100%; outline: none; font-size: 14px; }
+    .input:focus { border-color: #d4a536; }
+    .sidebar-btn { transition: all 0.15s; width: 100%; text-align: left; padding: 12px 14px; border-radius: 10px; font-size: 14px; border: none; background: transparent; color: #a08c6a; cursor: pointer; }
+    .sidebar-btn.active, .sidebar-btn:hover { background: #2e2618; color: #d4a536; }
+    .hidden { display: none !important; }
+    @media (max-width: 768px) {
+      #sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 60; width: 280px; transition: left 0.25s ease; }
+      #sidebar.open { left: 0; }
+      #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; }
+      #sidebar-overlay.show { display: block; }
+    }
+    @media (min-width: 769px) {
+      #sidebar { position: sticky; top: 0; height: 100vh; }
+      #menu-toggle, #sidebar-overlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login -->
+  <div id="admin-login" class="min-h-screen flex items-center justify-center p-4">
+    <div class="card w-full max-w-sm p-6 space-y-4">
+      <h1 class="text-2xl font-bold text-center gold" style="font-family:'Playfair Display',serif;">Admin Panel</h1>
+      <p class="text-center text-sm text-[#a08c6a]">Gold Fortune Backend</p>
+      <div>
+        <label class="text-sm mb-1.5 block">Password</label>
+        <input id="admin-pass" type="password" class="input" placeholder="Enter admin password" />
+      </div>
+      <button onclick="adminLogin()" class="btn w-full">Login</button>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="admin-app" class="hidden min-h-screen">
+    <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="flex min-h-screen">
+      <aside id="sidebar" class="w-[280px] bg-[#1a160f] border-r border-[#2e2618] p-4 flex flex-col gap-1 flex-shrink-0">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-bold gold" style="font-family:'Playfair Display',serif;">Gold Fortune</h2>
+          <button onclick="closeSidebar()" class="md:hidden text-2xl text-[#a08c6a]">×</button>
+        </div>
+        <button onclick="showAdminSection('dashboard')" class="sidebar-btn active" data-sec="dashboard">📊 Dashboard</button>
+        <button onclick="showAdminSection('customers')" class="sidebar-btn" data-sec="customers">👥 Customers</button>
+        <button onclick="showAdminSection('withdraws')" class="sidebar-btn" data-sec="withdraws">💸 Withdraw Requests</button>
+        <button onclick="showAdminSection('payment')" class="sidebar-btn" data-sec="payment">🏦 Payment Account</button>
+        <button onclick="showAdminSection('whatsapp')" class="sidebar-btn" data-sec="whatsapp">💬 WhatsApp</button>
+        <button onclick="showAdminSection('telegram')" class="sidebar-btn" data-sec="telegram">✈ Telegram Support</button>
+        <button onclick="showAdminSection('channel')" class="sidebar-btn" data-sec="channel">📢 Telegram Channel</button>
+        <button onclick="showAdminSection('products')" class="sidebar-btn" data-sec="products">📦 Products</button>
+        <button onclick="showAdminSection('settings')" class="sidebar-btn" data-sec="settings">⚙ Settings</button>
+        <div class="mt-auto pt-4">
+          <button onclick="adminLogout()" class="sidebar-btn text-red-400">⏻ Logout</button>
+        </div>
+      </aside>
+
+      <div class="flex-1 flex flex-col min-w-0">
+        <header class="sticky top-0 z-40 bg-[#1a160f] border-b border-[#2e2618] px-4 py-3 flex items-center gap-3">
+          <button id="menu-toggle" onclick="openSidebar()" class="text-2xl text-[#d4a536] md:hidden">☰</button>
+          <h1 id="page-title" class="font-semibold text-lg gold">Dashboard</h1>
+        </header>
+
+        <main class="flex-1 p-4 md:p-6 overflow-auto">
+          <!-- DASHBOARD -->
+          <div id="sec-dashboard">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div class="card p-5">
+                <p class="text-sm text-[#a08c6a]">Total Customers</p>
+                <p id="stat-users" class="text-3xl font-bold gold mt-1">0</p>
+              </div>
+              <div class="card p-5">
+                <p class="text-sm text-[#a08c6a]">Total Balance Held</p>
+                <p id="stat-balance" class="text-3xl font-bold gold mt-1">₦0</p>
+              </div>
+              <div class="card p-5">
+                <p class="text-sm text-[#a08c6a]">Pending Payments</p>
+                <p id="stat-pending" class="text-3xl font-bold gold mt-1">0</p>
+              </div>
+            </div>
+            <div class="card p-5">
+              <h3 class="font-semibold mb-3">Recent Signups</h3>
+              <div id="recent-users" class="space-y-2 text-sm"></div>
+            </div>
+          </div>
+
+          <!-- CUSTOMERS -->
+          <div id="sec-customers" class="hidden">
+            <div class="card overflow-x-auto">
+              <table class="w-full text-sm min-w-[700px]">
+                <thead class="border-b border-[#2e2618] text-[#a08c6a]">
+                  <tr>
+                    <th class="p-3 text-left">Name</th>
+                    <th class="p-3 text-left">Email</th>
+                    <th class="p-3 text-left">Balance</th>
+                    <th class="p-3 text-left">Referrals</th>
+                    <th class="p-3 text-left">Code</th>
+                    <th class="p-3 text-left">Joined</th>
+                    <th class="p-3 text-left">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          
+          <!-- WITHDRAW REQUESTS -->
+          <div id="sec-withdraws" class="hidden">
+            <div class="card overflow-x-auto">
+              <table class="w-full text-sm min-w-[800px]">
+                <thead class="border-b border-[#2e2618] text-[#a08c6a]">
+                  <tr>
+                    <th class="p-3 text-left">Customer</th>
+                    <th class="p-3 text-left">Amount</th>
+                    <th class="p-3 text-left">Bank</th>
+                    <th class="p-3 text-left">Account</th>
+                    <th class="p-3 text-left">Date</th>
+                    <th class="p-3 text-left">Status</th>
+                    <th class="p-3 text-left">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="withdraws-table"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- PAYMENT ACCOUNT -->
+          <div id="sec-payment" class="hidden">
+            <div class="card p-5 md:p-6 max-w-lg space-y-5">
+              <div>
+                <h2 class="text-xl font-bold gold mb-1">Payment Account</h2>
+                <p class="text-sm text-[#a08c6a]">These details appear on the payment page when users buy a product. Changes reflect on the front-end immediately.</p>
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Account Name</label>
+                <input id="set-accname" type="text" class="input" placeholder="e.g. Blessing Asuquo" />
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Account Number</label>
+                <input id="set-accnum" type="text" class="input" placeholder="e.g. 1848130535" />
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Bank Name</label>
+                <input id="set-bankname" type="text" class="input" placeholder="e.g. Smartcash" />
+              </div>
+              <button onclick="savePaymentAccount()" class="btn w-full">Save Payment Account</button>
+              <p id="pay-saved" class="text-sm text-green-400 hidden">✓ Saved successfully. Front-end updated.</p>
+            </div>
+          </div>
+
+          <!-- WHATSAPP -->
+          <div id="sec-whatsapp" class="hidden">
+            <div class="card p-5 md:p-6 max-w-lg space-y-5">
+              <div>
+                <h2 class="text-xl font-bold gold mb-1">WhatsApp Support</h2>
+                <p class="text-sm text-[#a08c6a]">This link appears on the Support page. Changes reflect immediately on the front-end.</p>
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">WhatsApp Link or Number</label>
+                <input id="set-whatsapp" type="text" class="input" placeholder="https://wa.me/2348148103620" />
+                <p class="text-xs text-[#a08c6a] mt-1.5">Use full link: https://wa.me/234XXXXXXXXXX</p>
+              </div>
+              <button onclick="saveWhatsapp()" class="btn w-full">Save WhatsApp</button>
+              <p id="wa-saved" class="text-sm text-green-400 hidden">✓ Saved. Front-end updated.</p>
+            </div>
+          </div>
+
+          <!-- TELEGRAM SUPPORT -->
+          <div id="sec-telegram" class="hidden">
+            <div class="card p-5 md:p-6 max-w-lg space-y-5">
+              <div>
+                <h2 class="text-xl font-bold gold mb-1">Telegram Support</h2>
+                <p class="text-sm text-[#a08c6a]">This link appears on the Support page. Changes reflect immediately on the front-end.</p>
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Telegram Support Link</label>
+                <input id="set-telegram" type="text" class="input" placeholder="https://t.me/goldfortune01" />
+              </div>
+              <button onclick="saveTelegram()" class="btn w-full">Save Telegram Support</button>
+              <p id="tg-saved" class="text-sm text-green-400 hidden">✓ Saved. Front-end updated.</p>
+            </div>
+          </div>
+
+          <!-- TELEGRAM CHANNEL -->
+          <div id="sec-channel" class="hidden">
+            <div class="card p-5 md:p-6 max-w-lg space-y-5">
+              <div>
+                <h2 class="text-xl font-bold gold mb-1">Telegram Channel / Community</h2>
+                <p class="text-sm text-[#a08c6a]">This link appears on the Platform / Community page. Changes reflect immediately.</p>
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Telegram Channel Link</label>
+                <input id="set-channel" type="text" class="input" placeholder="https://t.me/goldfortune01" />
+              </div>
+              <button onclick="saveChannel()" class="btn w-full">Save Telegram Channel</button>
+              <p id="ch-saved" class="text-sm text-green-400 hidden">✓ Saved. Front-end updated.</p>
+            </div>
+          </div>
+
+          <!-- PRODUCTS -->
+          <div id="sec-products" class="hidden">
+            <div class="card p-5 space-y-4">
+              <h2 class="text-xl font-bold gold">Current Products</h2>
+              <p class="text-sm text-[#a08c6a]">These are the products shown on the front-end.</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-[#0f0c07] rounded-xl p-4">
+                  <p class="font-semibold">⭐ Starter</p>
+                  <p class="text-sm text-[#a08c6a]">Invest ₦5,000 → Profit ₦50,000</p>
+                </div>
+                <div class="bg-[#0f0c07] rounded-xl p-4">
+                  <p class="font-semibold">🥈 Silver</p>
+                  <p class="text-sm text-[#a08c6a]">Invest ₦10,000 → Profit ₦70,000</p>
+                </div>
+                <div class="bg-[#0f0c07] rounded-xl p-4">
+                  <p class="font-semibold">🥇 Gold</p>
+                  <p class="text-sm text-[#a08c6a]">Invest ₦15,000 → Profit ₦100,000</p>
+                </div>
+                <div class="bg-[#0f0c07] rounded-xl p-4">
+                  <p class="font-semibold">💎 Diamond</p>
+                  <p class="text-sm text-[#a08c6a]">Invest ₦20,000 → Profit ₦150,000</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SETTINGS -->
+          <div id="sec-settings" class="hidden">
+            <div class="card p-5 md:p-6 max-w-lg space-y-5">
+              <div>
+                <h2 class="text-xl font-bold gold mb-1">Settings</h2>
+                <p class="text-sm text-[#a08c6a]">Change your admin panel password. Keep it secure.</p>
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Current Password</label>
+                <input id="set-old-pass" type="password" class="input" placeholder="Enter current password" />
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">New Password</label>
+                <input id="set-new-pass" type="password" class="input" placeholder="Enter new password" />
+              </div>
+              <div>
+                <label class="text-sm mb-1.5 block">Confirm New Password</label>
+                <input id="set-new-pass2" type="password" class="input" placeholder="Confirm new password" />
+              </div>
+              <button onclick="changeAdminPassword()" class="btn w-full">Change Password</button>
+              <p id="settings-msg" class="text-sm hidden"></p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BIN_ID = '6a9b0f99da38895dfe399c73';
+    const ACCESS_KEY = '$2a$10$pqInp3O8CbNngOF0Y2rFW.oI0uk/xVUoGuGjUgpwFMFgRlhY8pAGS';
+    const MASTER_KEY = '$2a$10$hmXdJoo8tCS.xYXR1iTV9O8YoeagMRUQmupeveyJUy.p81';
+    const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+    const DEFAULT_ADMIN_PASS = '202020';
+
+    let appData = { users: [], settings: {} };
+    let currentAdminPass = localStorage.getItem('gf_admin_pass') || DEFAULT_ADMIN_PASS;
+
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('sidebar-overlay').classList.add('show');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('show');
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch(BIN_URL + '/latest', {
+          headers: { 'X-Master-Key': MASTER_KEY, 'X-Access-Key': ACCESS_KEY }
+        });
+        const json = await res.json();
+        const record = json.record || json;
+        appData = {
+          users: record.users || [],
+          withdrawals: record.withdrawals || [],
+          settings: record.settings || {
+            whatsapp: 'https://wa.me/2348148103620',
+            telegram: 'https://t.me/goldfortune01',
+            telegramChannel: 'https://t.me/goldfortune01',
+            bankAccount: '1848130535',
+            bankName: 'Smartcash',
+            accountName: 'Blessing Asuquo',
+            adminPassword: DEFAULT_ADMIN_PASS
+          },
+          products: record.products || []
+        };
+        // Sync admin password from bin if present
+        if (appData.settings.adminPassword) {
+          currentAdminPass = appData.settings.adminPassword;
+          localStorage.setItem('gf_admin_pass', currentAdminPass);
+        }
+      } catch (e) {
+        appData = {
+          users: [],
+          withdrawals: [],
+          settings: {
+            whatsapp: 'https://wa.me/2348148103620',
+            telegram: 'https://t.me/goldfortune01',
+            telegramChannel: 'https://t.me/goldfortune01',
+            bankAccount: '1848130535',
+            bankName: 'Smartcash',
+            accountName: 'Blessing Asuquo',
+            adminPassword: DEFAULT_ADMIN_PASS
+          }
+        };
+      }
+    }
+
+    async function saveData() {
+      try {
+        await fetch(BIN_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': MASTER_KEY,
+            'X-Access-Key': ACCESS_KEY
+          },
+          body: JSON.stringify(appData)
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function adminLogin() {
+      const pass = document.getElementById('admin-pass').value;
+      if (pass === currentAdminPass || pass === DEFAULT_ADMIN_PASS) {
+        // if they used default and stored is different, still allow default once? No - only current
+        // Allow both current stored and default only if never changed
+        if (pass !== currentAdminPass && pass === DEFAULT_ADMIN_PASS && currentAdminPass !== DEFAULT_ADMIN_PASS) {
+          alert('Wrong password');
+          return;
+        }
+        document.getElementById('admin-login').classList.add('hidden');
+        document.getElementById('admin-app').classList.remove('hidden');
+        loadData().then(() => {
+          showAdminSection('dashboard');
+          fillSettingsForms();
+        });
+      } else {
+        alert('Wrong password');
+      }
+    }
+
+    function adminLogout() {
+      document.getElementById('admin-app').classList.add('hidden');
+      document.getElementById('admin-login').classList.remove('hidden');
+      document.getElementById('admin-pass').value = '';
+    }
+
+    function showAdminSection(sec) {
+      document.querySelectorAll('[id^="sec-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('sec-' + sec)?.classList.remove('hidden');
+      document.querySelectorAll('.sidebar-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.sec === sec);
+      });
+      const titles = {
+        dashboard: 'Dashboard',
+        customers: 'Customers',
+        withdraws: 'Withdraw Requests',
+        payment: 'Payment Account',
+        whatsapp: 'WhatsApp Support',
+        telegram: 'Telegram Support',
+        channel: 'Telegram Channel',
+        products: 'Products',
+        settings: 'Settings'
+      };
+      document.getElementById('page-title').textContent = titles[sec] || sec;
+      closeSidebar();
+      if (sec === 'dashboard') renderDashboard();
+      if (sec === 'customers') renderCustomers();
+      if (sec === 'withdraws') renderWithdraws();
+      if (['payment','whatsapp','telegram','channel'].includes(sec)) fillSettingsForms();
+    }
+
+    function fillSettingsForms() {
+      const s = appData.settings || {};
+      document.getElementById('set-accname').value = s.accountName || '';
+      document.getElementById('set-accnum').value = s.bankAccount || '';
+      document.getElementById('set-bankname').value = s.bankName || '';
+      document.getElementById('set-whatsapp').value = s.whatsapp || '';
+      document.getElementById('set-telegram').value = s.telegram || '';
+      document.getElementById('set-channel').value = s.telegramChannel || '';
+    }
+
+    function renderDashboard() {
+      const users = appData.users || [];
+      document.getElementById('stat-users').textContent = users.length;
+      const totalBal = users.reduce((s, u) => s + (u.balance || 0), 0);
+      document.getElementById('stat-balance').textContent = '₦' + totalBal.toLocaleString();
+      let pending = 0;
+      users.forEach(u => {
+        (u.purchases || []).forEach(p => { if (p.status === 'pending') pending++; });
+      });
+      document.getElementById('stat-pending').textContent = pending;
+      const recent = [...users].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 8);
+      document.getElementById('recent-users').innerHTML = recent.length
+        ? recent.map(u => `<div class="flex justify-between py-2 border-b border-[#2e2618]"><span>${u.fullName}</span><span class="text-[#a08c6a]">${new Date(u.createdAt).toLocaleDateString()}</span></div>`).join('')
+        : '<p class="text-[#a08c6a]">No users yet</p>';
+    }
+
+    function renderCustomers() {
+      const users = appData.users || [];
+      document.getElementById('customers-table').innerHTML = users.map(u => `
+        <tr class="border-b border-[#2e2618]">
+          <td class="p-3">${u.fullName || '-'}</td>
+          <td class="p-3 text-[#a08c6a]">${u.email || '-'}</td>
+          <td class="p-3 gold">₦${(u.balance||0).toLocaleString()}</td>
+          <td class="p-3">${(u.referrals||[]).length}</td>
+          <td class="p-3 font-mono text-xs">${u.referralCode || '-'}</td>
+          <td class="p-3 text-[#a08c6a]">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+          <td class="p-3">
+            <button class="btn-danger" onclick="deleteCustomer('${u.id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="7" class="p-4 text-center text-[#a08c6a]">No customers yet</td></tr>';
+    }
+
+    async function deleteCustomer(id) {
+      const user = (appData.users || []).find(u => u.id === id);
+      if (!user) return;
+      if (!confirm(`Delete account for ${user.fullName || user.email}? This cannot be undone.`)) return;
+      appData.users = (appData.users || []).filter(u => u.id !== id);
+      await saveData();
+      renderCustomers();
+      renderDashboard();
+      alert('Customer deleted');
+    }
+
+    async function savePaymentAccount() {
+      appData.settings = appData.settings || {};
+      appData.settings.accountName = document.getElementById('set-accname').value.trim();
+      appData.settings.bankAccount = document.getElementById('set-accnum').value.trim();
+      appData.settings.bankName = document.getElementById('set-bankname').value.trim();
+      const ok = await saveData();
+      const el = document.getElementById('pay-saved');
+      el.classList.remove('hidden');
+      el.textContent = ok ? '✓ Saved successfully. Front-end updated.' : 'Saved locally. Check connection.';
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    async function saveWhatsapp() {
+      appData.settings = appData.settings || {};
+      appData.settings.whatsapp = document.getElementById('set-whatsapp').value.trim();
+      const ok = await saveData();
+      const el = document.getElementById('wa-saved');
+      el.classList.remove('hidden');
+      el.textContent = ok ? '✓ Saved. Front-end updated.' : 'Saved locally.';
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    async function saveTelegram() {
+      appData.settings = appData.settings || {};
+      appData.settings.telegram = document.getElementById('set-telegram').value.trim();
+      const ok = await saveData();
+      const el = document.getElementById('tg-saved');
+      el.classList.remove('hidden');
+      el.textContent = ok ? '✓ Saved. Front-end updated.' : 'Saved locally.';
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    async function saveChannel() {
+      appData.settings = appData.settings || {};
+      appData.settings.telegramChannel = document.getElementById('set-channel').value.trim();
+      const ok = await saveData();
+      const el = document.getElementById('ch-saved');
+      el.classList.remove('hidden');
+      el.textContent = ok ? '✓ Saved. Front-end updated.' : 'Saved locally.';
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    
+    function renderWithdraws() {
+      const list = appData.withdrawals || [];
+      const sorted = [...list].sort((a,b) => new Date(b.date) - new Date(a.date));
+      document.getElementById('withdraws-table').innerHTML = sorted.length ? sorted.map(w => {
+        const statusColor = w.status === 'pending' ? '#eab308' : w.status === 'approved' ? '#4ade80' : '#f87171';
+        const bank = w.bank || {};
+        const actions = w.status === 'pending' ? `
+          <button class="btn" style="padding:6px 12px;font-size:12px;margin-right:6px;" onclick="approveWithdraw('${w.id}')">Approve</button>
+          <button class="btn-danger" onclick="declineWithdraw('${w.id}')">Decline</button>
+        ` : `<span class="text-xs" style="color:${statusColor}">${w.status}</span>`;
+        return `<tr class="border-b border-[#2e2618]">
+          <td class="p-3">
+            <div>${w.userName || '-'}</div>
+            <div class="text-xs text-[#a08c6a]">${w.userEmail || ''}</div>
+          </td>
+          <td class="p-3 gold font-semibold">₦${Number(w.amount||0).toLocaleString()}</td>
+          <td class="p-3 text-sm">${bank.bankName || '-'}</td>
+          <td class="p-3 text-sm">
+            <div>${bank.accountNumber || '-'}</div>
+            <div class="text-xs text-[#a08c6a]">${bank.accountName || ''}</div>
+          </td>
+          <td class="p-3 text-[#a08c6a] text-xs">${w.date ? new Date(w.date).toLocaleString() : '-'}</td>
+          <td class="p-3"><span style="color:${statusColor};text-transform:capitalize;">${w.status}</span></td>
+          <td class="p-3">${actions}</td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="7" class="p-4 text-center text-[#a08c6a]">No withdraw requests yet</td></tr>';
+    }
+
+    async function approveWithdraw(id) {
+      const w = (appData.withdrawals || []).find(x => x.id === id);
+      if (!w || w.status !== 'pending') return;
+      if (!confirm('Approve this withdrawal of ₦' + Number(w.amount).toLocaleString() + '?')) return;
+      w.status = 'approved';
+      const user = (appData.users || []).find(u => u.id === w.userId);
+      if (user) {
+        user.transactions = user.transactions || [];
+        const tx = user.transactions.find(t => t.withdrawId === id);
+        if (tx) {
+          tx.status = 'approved';
+          tx.note = 'Withdrawal successful';
+        }
+      }
+      await saveData();
+      renderWithdraws();
+      alert('Withdrawal approved');
+    }
+
+    async function declineWithdraw(id) {
+      const w = (appData.withdrawals || []).find(x => x.id === id);
+      if (!w || w.status !== 'pending') return;
+      if (!confirm('Decline this withdrawal? Amount will be refunded to customer balance.')) return;
+      w.status = 'declined';
+      const user = (appData.users || []).find(u => u.id === w.userId);
+      if (user) {
+        user.balance = (user.balance || 0) + Number(w.amount || 0);
+        user.transactions = user.transactions || [];
+        const tx = user.transactions.find(t => t.withdrawId === id);
+        if (tx) {
+          tx.status = 'declined';
+          tx.note = 'Refunded service timeout';
+          tx.amount = Number(w.amount || 0); // show as positive refund style - or keep negative with note
+        } else {
+          user.transactions.unshift({
+            type: 'refund',
+            amount: Number(w.amount || 0),
+            note: 'Refunded service timeout',
+            status: 'declined',
+            withdrawId: id,
+            date: new Date().toISOString()
+          });
+        }
+      }
+      await saveData();
+      renderWithdraws();
+      alert('Withdrawal declined and refunded');
+    }
+
+    async function changeAdminPassword() {
+      const oldP = document.getElementById('set-old-pass').value;
+      const newP = document.getElementById('set-new-pass').value;
+      const newP2 = document.getElementById('set-new-pass2').value;
+      const msg = document.getElementById('settings-msg');
+      msg.classList.remove('hidden', 'text-green-400', 'text-red-400');
+
+      if (!oldP || !newP || !newP2) {
+        msg.textContent = 'Fill all password fields';
+        msg.classList.add('text-red-400');
+        return;
+      }
+      if (oldP !== currentAdminPass) {
+        msg.textContent = 'Current password is incorrect';
+        msg.classList.add('text-red-400');
+        return;
+      }
+      if (newP.length < 4) {
+        msg.textContent = 'New password must be at least 4 characters';
+        msg.classList.add('text-red-400');
+        return;
+      }
+      if (newP !== newP2) {
+        msg.textContent = 'New passwords do not match';
+        msg.classList.add('text-red-400');
+        return;
+      }
+
+      appData.settings = appData.settings || {};
+      appData.settings.adminPassword = newP;
+      currentAdminPass = newP;
+      localStorage.setItem('gf_admin_pass', newP);
+      const ok = await saveData();
+      msg.textContent = ok ? '✓ Password changed successfully' : '✓ Password changed (saved locally)';
+      msg.classList.add('text-green-400');
+      document.getElementById('set-old-pass').value = '';
+      document.getElementById('set-new-pass').value = '';
+      document.getElementById('set-new-pass2').value = '';
+    }
+
+    document.getElementById('admin-pass')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') adminLogin();
+    });
+  </script>
+</body>
+</html>
